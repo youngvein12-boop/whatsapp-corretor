@@ -1,18 +1,22 @@
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
-import google.generativeai as genai
+from openai import OpenAI
 
-genai.configure(api_key="AQ.Ab8RN6LVq98Ya5jL2IfdDi_-ttId1dCxiwtAftNglFfTIG9bNQ")
-model = genai.GenerativeModel("gemini-1.5-flash")
+client = OpenAI(api_key="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")
 
 app = Flask(__name__)
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
     incoming = request.form.get("Body", "")
-    prompt = f"Correct the English grammar and spelling. Return ONLY the corrected sentence, nothing else.\n\n{incoming}"
-    response = model.generate_content(prompt)
-    corrected = response.text.strip()
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Correct the English grammar and spelling. Return ONLY the corrected sentence, nothing else."},
+            {"role": "user", "content": incoming}
+        ]
+    )
+    corrected = response.choices[0].message.content.strip()
     resp = MessagingResponse()
     resp.message(corrected)
     return str(resp)
